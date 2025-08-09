@@ -1,4 +1,4 @@
-import { GameManager } from './Js/GameManager.js'
+import { GameManager } from './GameManager.js'
 var Base = {
     value: null,
     assets: {},
