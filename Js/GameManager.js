@@ -32,6 +32,7 @@ export class GameManager {
             this.canvas.width = _w
             this.canvas.height = _h
             Panel._scale = _w / this.baseSize.width
+            console.log(Panel._scale)
         },
     }
     canvas = null
@@ -72,10 +73,12 @@ export class GameManager {
             context: this.context,
             baseSize: this.baseSize,
         })
-        this.showScene = 'loading'
-        this.scenes.loading.draw(() => this.loadAssets())
+        this.setScene('loading')
+        this.scenes.loading.draw(() =>
+            this.loadAssets((p) => this.scenes.loading.updatePercent(p))
+        )
     }
-    loadAssets() {
+    loadAssets(call) {
         // 读取普通图片
         this.assets._types.default.forEach((key) => {
             const { list, prefix } = this.assets[key]
@@ -101,13 +104,18 @@ export class GameManager {
                 Utils.loadAsset(this.assetManager, url)
             })
         })
-        this.checkLoad()
+        this.checkLoad(call)
     }
-    checkLoad() {
+    checkLoad(call) {
         if (this.assetManager.isLoadingComplete()) {
+            call(1)
             this.animFrame = requestAnimationFrame((d) => this.draw(d))
         } else {
-            this.animFrame = requestAnimationFrame(() => this.checkLoad())
+            call(
+                this.assetManager.loaded /
+                    (this.assetManager.loaded + this.assetManager.toLoad)
+            )
+            this.animFrame = requestAnimationFrame(() => this.checkLoad(call))
         }
     }
     draw(delta) {
@@ -117,9 +125,10 @@ export class GameManager {
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
 
         Object.keys(Panel._drawing).forEach((key) => {
-            Panel._group[key].forEach((item) => {
-                item.draw(delta)
-            })
+            if (Panel._group?.[key] && Panel._drawing[key])
+                Panel._group[key].forEach((item) => {
+                    item.draw(delta)
+                })
         })
 
         if (this.fps) {
@@ -131,6 +140,15 @@ export class GameManager {
         }
         this.delta = delta
         this.animFrame = requestAnimationFrame((d) => this.draw(d))
+    }
+    setScene(key) {
+        this.showScene = key
+        const obj = { ...Panel._drawing }
+        delete obj.default
+        Object.keys(obj).forEach((_key) => {
+            Panel._drawing[_key] = false
+        })
+        Panel._drawing[key] = true
     }
 }
 

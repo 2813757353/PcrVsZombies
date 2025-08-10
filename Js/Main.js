@@ -1,5 +1,5 @@
 import { GameManager } from './GameManager.js'
-var Base = {
+window.Base = {
     value: null,
     assets: {},
     bindEvent() {

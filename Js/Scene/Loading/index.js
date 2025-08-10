@@ -2,17 +2,19 @@ import { Assets } from './Assets.js'
 import { Utils } from '../../Utils.js'
 import { Panel } from '../../GUI/Panel.js'
 import { Button } from '../../GUI/Button.js'
+import { Slider } from '../../GUI/Slider.js'
 const BaseUrl = Assets.prefix
 export class Loading {
     canvas = null
     context = null
-    assetsManager = new spine.canvas.AssetManager()
+    assetManager = new spine.canvas.AssetManager()
 
     baseSize = null
 
     // 渲染UI
     background = null
     button = null
+    slider = null
     panels = []
 
     constructor(data) {
@@ -25,17 +27,21 @@ export class Loading {
         const files = Assets.images
         const urls = Utils.getAllUrl(files, BaseUrl)
         urls.forEach((url) => {
-            this.assetsManager.loadTexture(url)
+            this.assetManager.loadTexture(url)
         })
-        this.draw = (f) => this.checkLoad(f)
+        this.draw = (f) =>
+            this.checkLoad(() => {
+                this.button.text = '点击开始'
+                f()
+            })
     }
     draw = null
     checkLoad(callback) {
-        if (this.assetsManager.isLoadingComplete()) {
+        if (this.assetManager.isLoadingComplete()) {
             this.initBackground()
             this.initLogo()
             this.initButton()
-            Panel._drawing.loading_ui = true
+            this.initSlider()
             if (callback instanceof Function) {
                 callback()
             }
@@ -52,11 +58,11 @@ export class Loading {
                 height: this.baseSize.height,
             },
             type: {
-                default: this.assetsManager.get(
+                default: this.assetManager.get(
                     `${BaseUrl}LoadingBackground.jpg`
                 ),
             },
-            group: 'loading_ui',
+            group: 'loading',
         })
     }
     initLogo() {
@@ -72,9 +78,9 @@ export class Loading {
                 height: _rect.height,
             },
             type: {
-                default: this.assetsManager.get(`${BaseUrl}Logo.png`),
+                default: this.assetManager.get(`${BaseUrl}Logo.png`),
             },
-            group: 'loading_ui',
+            group: 'loading',
         })
         let timer = -1
         const _h = 60
@@ -104,14 +110,23 @@ export class Loading {
                 y: this.baseSize.height,
                 width: _rect.width,
                 height: _rect.height,
+                textX: 'center',
+                textY: 33,
+                fontSize: 15,
             },
             type: {
-                default: this.assetsManager.get(`${BaseUrl}LoadBarDirt.png`),
+                default: this.assetManager.get(`${BaseUrl}LoadBarDirt.png`),
             },
-            group: 'loading_ui',
+            group: 'loading',
+            onclick: () => {
+                const mg = window.Base.value
+                if (mg.assetManager.isLoadingComplete()) {
+                    mg.setScene('mainMenu')
+                }
+            },
         })
         let timer = -1
-        const _h = this.baseSize.height - _rect.height - 40
+        const _h = this.baseSize.height - _rect.height - 30
         button.addEvent('slidButton', (d) => {
             if (timer === -1) {
                 timer = d
@@ -125,6 +140,52 @@ export class Loading {
                 }
             }
         })
+        button.text = '加载中'
+        button.font = `fzjz`
+        button.textColor = '#f3b31d'
+        button.activeColor = '#db6a0e'
         this.button = button
+    }
+    initSlider() {
+        const _rect = {
+            width: 314,
+            height: 33,
+        }
+        const slider = new Slider({
+            bounds: {
+                x: this.baseSize.width / 2 - _rect.width / 2 - 6,
+                y: this.baseSize.height,
+                width: _rect.width,
+                height: _rect.height,
+                areaX: 0,
+                areaY: 0,
+                areaWidth: 0,
+                areaHeight: _rect.height,
+            },
+            type: {
+                default: this.assetManager.get(`${BaseUrl}LoadBarGrass.png`),
+            },
+            group: 'loading',
+        })
+        let timer = -1
+        const _h = this.baseSize.height - _rect.height - 30 - 33
+        slider.addEvent('slider', (d) => {
+            if (timer === -1) {
+                timer = d
+                slider.speed.y = -0.02
+            } else {
+                slider.bounds.y = (d - timer) * slider.speed.y + slider.bounds.y
+                if (slider.bounds.y < _h) {
+                    slider.removeEvent('slider')
+                    slider.bounds.y = _h
+                    slider.speed.y = 0
+                }
+            }
+        })
+        this.slider = slider
+    }
+    updatePercent(p) {
+        console.log(p)
+        this.slider.percent = p
     }
 }

@@ -1,8 +1,8 @@
 export class Panel {
     // 所属分组 同组内的zIndex参与排序
-    static _group = {}
+    static _group = { default: [] }
     // 正在绘制的分组
-    static _drawing = {}
+    static _drawing = { default: true }
     static _scale = 1
     /*事件合集
         mouseup
@@ -13,11 +13,22 @@ export class Panel {
             keyEvent组合键: ctrl_key\alt_key
     */
     _events = {}
+    text = ''
+    font = ''
+    textColor = '#000000'
+    activeColor = '#000000'
+    active = false
     bounds = {
         x: 0,
         y: 0,
         width: 0,
         height: 0,
+        areaX: 0,
+        areaY: 0,
+        areaWidth: -1,
+        areaHeight: -1,
+        textX: 0,
+        textY: 0,
     }
     //移动速度
     speed = {}
@@ -38,7 +49,7 @@ export class Panel {
     context = null
     constructor(data) {
         const _group = Panel._group
-        this.bounds = data.bounds ?? this.bounds
+        this.bounds = { ...this.bounds, ...(data.bounds ?? this.bounds) }
         this.zIndex = data.zIndex ?? this.zIndex
         this.type = data.type ?? this.type
         this.context = data.context ?? Panel._context
@@ -66,14 +77,63 @@ export class Panel {
         const _scale = Panel._scale
         const ctx = this.context
         if (this.currentImg && this.type[this.currentImg]) {
-            ctx.drawImage(
-                this.type[this.currentImg]._image,
-                this.bounds.x * _scale,
-                this.bounds.y * _scale,
-                this.bounds.width * _scale,
-                this.bounds.height * _scale
-            )
+            if (this.bounds.areaWidth === -1 && this.bounds.areaHeight === -1) {
+                ctx.drawImage(
+                    this.type[this.currentImg]._image,
+                    this.bounds.x * _scale,
+                    this.bounds.y * _scale,
+                    this.bounds.width * _scale,
+                    this.bounds.height * _scale
+                )
+            } else {
+                ctx.drawImage(
+                    this.type[this.currentImg]._image,
+                    this.bounds.areaX,
+                    this.bounds.areaY,
+                    this.bounds.areaWidth,
+                    this.bounds.areaHeight,
+                    this.bounds.x * _scale,
+                    this.bounds.y * _scale,
+                    this.bounds.width * _scale,
+                    this.bounds.height * _scale
+                )
+            }
         }
+        if (this.text) {
+            let _textX = 0
+            let _textY = _scale * (this.bounds.textY + this.bounds.y)
+            if (typeof this.bounds.textX === 'string') {
+                const len = this.bounds.fontSize * this.text.length
+                switch (this.bounds.textX) {
+                    case 'center': {
+                        _textX = (this.bounds.width / 2 - len / 2) * _scale
+                        break
+                    }
+                    case 'left': {
+                        _textX = 0
+                        break
+                    }
+                    case 'right': {
+                        _textX = (this.bounds.width - len) * _scale
+                        break
+                    }
+                }
+            } else {
+                _textX = this.bounds.textX * _scale
+            }
+            _textX += this.bounds.x * _scale
+            ctx.save()
+            if (this.font) {
+                ctx.font = `${this.bounds.fontSize * _scale}px ${this.font}`
+            }
+            ctx.fillStyle =
+                this.active && this.activeColor
+                    ? this.activeColor
+                    : this.textColor
+            ctx.fillText(this.text, _textX, _textY)
+            ctx.restore()
+        }
+
         Object.keys(this.deltaEvents).forEach((key) => {
             this.deltaEvents[key](d)
         })

@@ -7,13 +7,13 @@ export class Button extends Panel {
         active: null,
         mousedown: null,
     }
+    cursor = 'pointer'
     btnUpTime = 300
     constructor(data) {
         super(data)
         this._reInit(data)
     }
     _reInit(data) {
-        const _scale = Panel._scale
         this.btnUpTime = data.btnUpTime ?? this.btnUpTime
         this.type = data.type ?? this.type
         if (data.onclick instanceof Function) {
@@ -21,17 +21,20 @@ export class Button extends Panel {
             this.onclick = () => data.onclick(this)
             if (!this._events.mousedown) {
                 this._events.mousedown = (e) => {
+                    const _scale = Panel._scale
                     if (this._check({ x: e.x / _scale, y: e.y / _scale })) {
-                        this.currentImg =
-                            this.type.mousedown ?? this.type.default
+                        this.currentImg = this.type.mousedown
+                            ? 'mousedown'
+                            : 'default'
                         setTimeout(() => {
-                            this.currentImg = this.type.default
+                            this.currentImg = 'default'
                         }, this.btnUpTime)
                         return this.eventPopup
                     }
                     return false
                 }
                 this._events.mouseup = (e) => {
+                    const _scale = Panel._scale
                     if (this._check({ x: e.x / _scale, y: e.y / _scale })) {
                         this.onclick()
                         return this.eventPopup
@@ -41,13 +44,19 @@ export class Button extends Panel {
             }
         }
         // 绑定激活
-        if (this.type.active && this._events.mousemove) {
+        if (!this._events.mousemove) {
             this._events.mousemove = (e) => {
+                const _scale = Panel._scale
+                const gm = window.Base.value
                 if (this._check({ x: e.x / _scale, y: e.y / _scale })) {
-                    this.currentImg = this.type.active
+                    this.active = true
+                    this.currentImg = this.type.active ? 'active' : 'default'
+                    gm.canvas.style.cursor = this.cursor
                     return this.eventPopup
                 } else {
-                    this.currentImg = this.type.default
+                    this.active = false
+                    gm.canvas.style.cursor = 'default'
+                    this.currentImg = 'default'
                 }
                 return false
             }
