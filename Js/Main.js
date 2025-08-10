@@ -30,6 +30,10 @@ window.onload = () => {
         context,
         canvas,
         percent: 1080 / 600,
+        baseSize: {
+            width: 1080,
+            height: 600,
+        },
         assets: Base.assets,
     })
     Base.bindEvent()

@@ -3,7 +3,7 @@ export const Assets = {
     images: [
         'LoadBarDirt.png',
         'LoadBarGrass.png',
-        'LoadingBackground.png',
+        'LoadingBackground.jpg',
         'Logo.png',
         'SodRollCap.png',
     ],

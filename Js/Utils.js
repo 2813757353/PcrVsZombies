@@ -2,13 +2,14 @@ export const Utils = {
     getAllUrl(list, prefix) {
         const urls = []
         list.forEach((item) => {
-            delete item.key
+            if (item.key) delete item.key
             urls.push(...this.getDeepStr(item))
         })
         if (prefix.length) return urls.map((str) => `${prefix}${str}`)
         return urls
     },
     getDeepStr(obj) {
+        if (typeof obj === 'string') return [obj]
         const arr = []
         Object.keys(obj).forEach((key) => {
             if (typeof obj[key] === 'string') {

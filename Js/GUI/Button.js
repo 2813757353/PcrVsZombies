@@ -1,15 +1,63 @@
-import { Panel } from './Panel'
+import { Panel } from './Panel.js'
 
 export class Button extends Panel {
     onclick = null
     type = {
         default: null,
         active: null,
-        down: null,
+        mousedown: null,
     }
+    btnUpTime = 300
     constructor(data) {
         super(data)
-        this.onclick = () => data.onclick(this)
+        this._reInit(data)
+    }
+    _reInit(data) {
+        const _scale = Panel._scale
+        this.btnUpTime = data.btnUpTime ?? this.btnUpTime
+        this.type = data.type ?? this.type
+        if (data.onclick instanceof Function) {
+            // 绑定事件
+            this.onclick = () => data.onclick(this)
+            if (!this._events.mousedown) {
+                this._events.mousedown = (e) => {
+                    if (this._check({ x: e.x / _scale, y: e.y / _scale })) {
+                        this.currentImg =
+                            this.type.mousedown ?? this.type.default
+                        setTimeout(() => {
+                            this.currentImg = this.type.default
+                        }, this.btnUpTime)
+                        return this.eventPopup
+                    }
+                    return false
+                }
+                this._events.mouseup = (e) => {
+                    if (this._check({ x: e.x / _scale, y: e.y / _scale })) {
+                        this.onclick()
+                        return this.eventPopup
+                    }
+                    return false
+                }
+            }
+        }
+        // 绑定激活
+        if (this.type.active && this._events.mousemove) {
+            this._events.mousemove = (e) => {
+                if (this._check({ x: e.x / _scale, y: e.y / _scale })) {
+                    this.currentImg = this.type.active
+                    return this.eventPopup
+                } else {
+                    this.currentImg = this.type.default
+                }
+                return false
+            }
+        }
+    }
+    setCurrent(type) {
+        this.currentImg = type
+    }
+    getCurrent() {
+        return this.currentImg
     }
     _check({ x, y }) {
         const rect = {
